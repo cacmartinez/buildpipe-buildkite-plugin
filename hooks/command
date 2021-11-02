@@ -4,9 +4,19 @@ set -euo pipefail
 buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.9.4}"
 is_test="${BUILDKITE_PLUGIN_BUILDPIPE_TEST_MODE:-false}"
 
-if [[ "$is_test" == "false" ]]; then
-  curl -Lf -o buildpipe https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${buildpipe_version}/buildpipe-linux \
-    && chmod +x buildpipe
-fi
+# if [[ "$is_test" == "false" ]]; then
+#   curl -Lf -o buildpipe https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${buildpipe_version}/buildpipe-linux \
+#     && chmod +x buildpipe
+# fi
 
-./buildpipe
+mkdir .temp
+cd .temp
+git clone https://github.com/cacmartinez/buildpipe-buildkite-plugin.git
+cd buildpipe-buildkite-plugin
+make build-darwin
+cd ../..
+mv .temp/buildpipe-buildkite-plugin/buildpipe-darwin buildpipe-darwin
+
+ls
+
+./buildpipe-darwin
