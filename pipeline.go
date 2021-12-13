@@ -84,15 +84,25 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 					stepCopyMap["depends_on"] = dependencyList
 				}
 
+				resultingDependencyList := new(int[], 0, cap(dependencyList))
 				for i, dependency := range dependencyList {
 					depStr := dependency.(string)
 
 					if step := findStepByKey(steps, depStr); step != nil {
-						if isProjectScopeStep(step) {
-							dependencyList[i] = fmt.Sprintf("%s:%s", depStr, project.Label)
+						if isProjectScopeStep(step) && isProjectScopeStep(stepCopyMap) {
+							// A project scoped step that depends on a project scope step would only depend on the step that matches this project.
+							append(resultingDependencyList, fmt.Sprintf("%s:%s", depStr, project.Label))
+						} else if isProjectScopeStep(step) {
+							// A non project scoped step that depends on a project scope step will depend on all of the projects that implement this step.
+							for _, possibleProjectDependency := range projects {
+								if possibleProjectDependency.checkProjectRules(step) { // Makes sure possible project will actually create a step for the dependency.
+									append(resultingDependencyList, fmt.Sprintf("%s:%s", depStr, possibleProjectDependency.Label))
+								}
+							}
 						}
 					}
 				}
+				stepCopyMap["depends_on"] = resultingDependencyList
 			}
 			projectSteps = append(projectSteps, stepCopy)
 		}
