@@ -73,38 +73,6 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 				}
 			}
 
-			// // If the step includes a depends_on clause, we need to validate whether each dependency
-			// // is a project-scoped step. If so, the dependency has the current project name added
-			// // to it to match the unique key given above.
-			// if val, ok := stepCopyMap["depends_on"]; ok {
-			// 	// depends_on can be an array or a string
-			// 	dependencyList, ok := val.([]interface{})
-			// 	if !ok {
-			// 		dependencyList = []interface{}{val}
-			// 		stepCopyMap["depends_on"] = dependencyList
-			// 	}
-
-			// 	resultingDependencyList := make([]string, 0, cap(dependencyList))
-			// 	for _, dependency := range dependencyList {
-			// 		depStr := dependency.(string)
-
-			// 		if step := findStepByKey(steps, depStr); step != nil {
-			// 			if isProjectScopeStep(step) && isProjectScopeStep(stepCopyMap) {
-			// 				// A project scoped step that depends on a project scope step would only depend on the step that matches this project.
-			// 				resultingDependencyList = append(resultingDependencyList, fmt.Sprintf("%s:%s", depStr, project.Label))
-			// 			} else if isProjectScopeStep(step) {
-			// 				// A non project scoped step that depends on a project scope step will depend on all of the projects that implement this step.
-			// 				for _, possibleProjectDependency := range projects {
-			// 					if possibleProjectDependency.checkProjectRules(step) { // Makes sure possible project will actually create a step for the dependency.
-			// 						resultingDependencyList = append(resultingDependencyList, fmt.Sprintf("%s:%s", depStr, possibleProjectDependency.Label))
-			// 					}
-			// 				}
-			// 			}
-			// 		}
-			// 	}
-			// 	stepCopyMap["depends_on"] = resultingDependencyList
-			// }
-
 			// If the step includes a depends_on clause, we need to validate whether each dependency
 			// is a project-scoped step. If so, the dependency has the current project name added
 			// to it to match the unique key given above.
@@ -173,8 +141,7 @@ func generateNonProjectStep(steps []interface{}, step interface{}, projects []Pr
 	stepCopyMap := stepCopy.(map[interface{}]interface{})
 
 	// If the step includes a depends_on clause, we need to validate whether each dependency
-	// is a project-scoped step. If so, the dependency has the current project name added
-	// to it to match the unique key given above.
+	// is a project-scoped step. If so, multiple dependencies will be created for each step that would result from each project.
 	if val, ok := stepCopyMap["depends_on"]; ok {
 		// depends_on can be an array or a string
 		dependencyList, ok := val.([]interface{})
@@ -188,7 +155,6 @@ func generateNonProjectStep(steps []interface{}, step interface{}, projects []Pr
 			depStr := dependency.(string)
 			if step := findStepByKey(steps, depStr); step != nil {
 				if isProjectScopeStep(step) {
-					// A non project scoped step that depends on a project scope step will depend on all of the projects that implement this step.
 					for _, possibleProjectDependency := range projects {
 						if possibleProjectDependency.checkProjectRules(step) { // Makes sure possible project will actually create a step for the dependency.
 							resultingDependencyList = append(resultingDependencyList, fmt.Sprintf("%s:%s", depStr, possibleProjectDependency.Label))
