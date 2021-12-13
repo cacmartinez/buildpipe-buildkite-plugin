@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/mohae/deepcopy"
 	log "github.com/sirupsen/logrus"
@@ -39,6 +40,39 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 				stepCopyMap["key"] = fmt.Sprintf("%s:%s", val, project.Label)
 			}
 
+			// Populate any yaml level buildpipe env vars we need
+			// We are explicitly checking certain keys for now to move mono repo forward
+
+			// Check for step specific github status check
+			if notify, ok := stepCopyMap["notify"].([]interface{}); ok {
+				for _, element := range notify {
+					if commitStatusMap, ok := element.(map[interface{}]interface{}); ok {
+						if commitStatus, ok := commitStatusMap["github_commit_status"].(map[interface{}]interface{}); ok {
+							if context, ok := commitStatus["context"].(string); ok {
+								commitStatus["context"] = stringReplaceProjectLabel(context, project)
+							}
+						}
+					}
+				}
+			}
+
+			// Check for step specific cache
+			if plugins, ok := stepCopyMap["plugins"].([]interface{}); ok {
+				fmt.Println("plugins check", plugins)
+
+				for _, element := range plugins {
+					if pluginMap, ok := element.(map[interface{}]interface{}); ok {
+						cachePluginKey := "ssh://git@github.com/Vkt0r/cache-buildkite-plugin.git#skip_restore_upload"
+
+						if cachePlugin, ok := pluginMap[cachePluginKey].(map[interface{}]interface{}); ok {
+							if cacheId, ok := cachePlugin["id"].(string); ok {
+								cachePlugin["id"] = stringReplaceProjectLabel(cacheId, project)
+							}
+						}
+					}
+				}
+			}
+
 			// If the step includes a depends_on clause, we need to validate whether each dependency
 			// is a project-scoped step. If so, the dependency has the current project name added
 			// to it to match the unique key given above.
@@ -65,6 +99,15 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 	}
 
 	return projectSteps
+}
+
+func stringReplaceProjectLabel(input string, project Project) string {
+	// handle all cases of env var interpolation
+	lowerLabel := strings.ToLower(project.Label)
+	envVarEscapedWithBraces := strings.ReplaceAll(input, "$${BUILDPIPE_PROJECT_LABEL}", lowerLabel)
+	envVarWithBraces := strings.ReplaceAll(envVarEscapedWithBraces, "${BUILDPIPE_PROJECT_LABEL}", lowerLabel)
+	envVarEscaped := strings.ReplaceAll(envVarWithBraces, "$$BUILDPIPE_PROJECT_LABEL", lowerLabel)
+	return strings.ReplaceAll(envVarEscaped, "$BUILDPIPE_PROJECT_LABEL", lowerLabel)
 }
 
 func isProjectScopeStep(step map[interface{}]interface{}) bool {
