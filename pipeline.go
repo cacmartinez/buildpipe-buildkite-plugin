@@ -150,9 +150,17 @@ func generateNonProjectStep(steps []interface{}, step interface{}, projects []Pr
 			stepCopyMap["depends_on"] = dependencyList
 		}
 
-		resultingDependencyList := make([]string, 0, cap(dependencyList))
+		resultingDependencyList := make([]interface{}, 0, cap(dependencyList))
 		for _, dependency := range dependencyList {
-			depStr := dependency.(string)
+			depStr, ok := dependency.(string)
+
+			if !ok { 
+				// At the moment only string dependencies would be processed by this. 
+				// So for example dependencies that add an `allow_failure` will not be changed for project scoped support.
+				resultingDependencyList = append(resultingDependencyList, dependency)
+				continue
+			}
+
 			if step := findStepByKey(steps, depStr); step != nil {
 				if isProjectScopeStep(step) {
 					for _, possibleProjectDependency := range projects {
@@ -160,6 +168,8 @@ func generateNonProjectStep(steps []interface{}, step interface{}, projects []Pr
 							resultingDependencyList = append(resultingDependencyList, fmt.Sprintf("%s:%s", depStr, possibleProjectDependency.Label))
 						}
 					}
+				} else {
+					resultingDependencyList = append(resultingDependencyList, dependency)
 				}
 			}
 		}
