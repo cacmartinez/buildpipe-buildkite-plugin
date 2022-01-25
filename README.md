@@ -41,6 +41,11 @@ projects:
    skip:
      - deploy-stg
    path: project3/somedir/  # subpaths can also be triggered
+ - label: project4
+   path: project4/**/*.swift  # glob patterns can be used
+   exclude_path: # excluding paths that would otherwise have a match in the `path` section.
+     - project4/tests/**/*.swift 
+     - project4/scripts/**/*.swift
 steps:  # the same schema as regular buildkite pipeline steps
   - label: test
     env:
@@ -95,6 +100,7 @@ The above pipelines specify the following:
 -   The env variable `BUILDPIPE_SCOPE: project` tells buildpipe to
     generate a step for each project if that project changed.
 -   The `skip` option will skip any step label matching `deploy*`.
+-   The `exclude_path` option will exclude paths that would have otherwise match paths or subpaths defined in the `path` option.
 -   The env variable `BUILDPIPE_PROJECT_PATH` is created by buildpipe as
     the project\'s path. If multiple paths are specified for a project,
     it\'s the first path.
@@ -126,6 +132,7 @@ Configuration
 | ------ | -------- | ----------- | ------- | ------------------------------------- | -------------------- |
 | label  | Yes      | string      |         | Project label                         | `BUILDPIPE_PROJECT_LABEL` |
 | path   | Yes      | array       |         | The path(s) that specify changes to a project | `BUILDPIPE_PROJECT_PATH` |
+| exclude_path | No | array       |         | The path(s) to explicitly ignore when identifying changes in the project |        |
 | skip   | No       | array       |         | Exclude steps that have labels that match the rule |         |
 | env    | No       | dictionary  |         | Define environment variable on a project scope |         |
 
@@ -133,6 +140,7 @@ Other useful things to note:
 
 -   Option `skip` makes use of Unix shell-style wildcards (Look at
     .gitignore files for inspiration)
+-   Options `path` and `exclude_path` may use glob patterns for matching.
 -   If multiple paths are specified, the environment variable
     `BUILDPIPE_PROJECT_PATH` will be the first path.
 -   Environment variables are available in the pipeline step.
