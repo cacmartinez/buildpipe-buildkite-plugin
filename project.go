@@ -36,10 +36,11 @@ func (a *StringArray) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Project struct {
-	Label string
-	Path  StringArray
-	Skip  StringArray
-	Env   map[string]string
+	Label       string
+	Path        StringArray
+	ExcludePath StringArray `yaml:"exclude_path"`
+	Skip        StringArray
+	Env         map[string]string
 }
 
 func (p *Project) getMainPath() string {
@@ -83,8 +84,15 @@ func (p *Project) checkAffected(changedFiles []string) bool {
 			return true
 		}
 		normalizedPath := path.Clean(filePath)
+
+	CHANGED_FILES_LOOP:
 		for _, changedFile := range changedFiles {
 			if matched, _ := matchPath(normalizedPath, changedFile); matched {
+				for _, excludedPath := range p.ExcludePath {
+					if matched, _ := matchPath(excludedPath, changedFile); matched {
+						continue CHANGED_FILES_LOOP
+					}
+				}
 				return true
 			}
 		}
