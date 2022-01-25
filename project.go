@@ -96,14 +96,6 @@ func (p *Project) checkAffected(changedFiles []string) bool {
 				return true
 			}
 		}
-
-		// projectDirs := strings.Split(normalizedPath, "/")
-		// for _, changedFile := range changedFiles {
-		// 	changedDirs := strings.Split(changedFile, "/")
-		// 	if reflect.DeepEqual(changedDirs[:Min(len(projectDirs), len(changedDirs))], projectDirs) {
-		// 		return true
-		// 	}
-		// }
 	}
 	return false
 }
