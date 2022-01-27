@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 func Min(x, y int) int {
@@ -59,43 +59,60 @@ func (p *Project) checkProjectRules(step map[interface{}]interface{}) bool {
 
 // matchPath checks if the file f matches the path p.
 // Taken from https://github.com/chronotc/monorepo-diff-buildkite-plugin/blob/602e650f10d54026fab466521c3202a04ae88afe/pipeline.go#L102
-func matchPath(p string, f string) (bool, error) {
+func matchPath(p string, f string) bool {
 	// If the path contains a glob, the `doublestar.Match`
 	// method is used to determine the match,
 	// otherwise `strings.HasPrefix` is used.
 	if strings.Contains(p, "*") {
 		match, err := doublestar.Match(p, f)
 		if err != nil {
-			return false, fmt.Errorf("path matching failed: %v", err)
+			log.Errorf("path matching failed: %v", err)
+			return false
 		}
 		if match {
-			return true, nil
+			return true
 		}
 	}
 	if strings.HasPrefix(f, p) {
-		return true, nil
+		return true
 	}
-	return false, nil
+	return false
 }
 
 func (p *Project) checkAffected(changedFiles []string) bool {
+	filteredChangedFiles := p.filterExcludedFiles(changedFiles)
+
 	for _, filePath := range p.Path {
 		if filePath == "." {
 			return true
 		}
 		normalizedPath := path.Clean(filePath)
 
-	CHANGED_FILES_LOOP:
-		for _, changedFile := range changedFiles {
-			if matched, _ := matchPath(normalizedPath, changedFile); matched {
-				for _, excludedPath := range p.ExcludePath {
-					if matched, _ := matchPath(excludedPath, changedFile); matched {
-						continue CHANGED_FILES_LOOP
-					}
-				}
+		for _, changedFile := range filteredChangedFiles {
+			if matched := matchPath(normalizedPath, changedFile); matched {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func (p *Project) filterExcludedFiles(changedFiles []string) []string {
+	result := make([]string, 0, len(changedFiles))
+
+	if len(p.ExcludePath) <= 0 {
+		return changedFiles
+	}
+
+CHANGED_FILES_LOOP:
+	for _, changedFile := range changedFiles {
+		for _, excludedPath := range p.ExcludePath {
+			if matched := matchPath(excludedPath, changedFile); matched {
+				continue CHANGED_FILES_LOOP
+			}
+		}
+		result = append(result, changedFile)
+	}
+
+	return result
 }
