@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bmatcuk/doublestar/v2"
+	"github.com/bmatcuk/doublestar/v4"
 	log "github.com/sirupsen/logrus"
 )
 
