@@ -3,6 +3,7 @@ package main
 import (
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
@@ -58,7 +59,6 @@ func (p *Project) checkProjectRules(step map[interface{}]interface{}) bool {
 }
 
 // matchPath checks if the file f matches the path p.
-// Taken from https://github.com/chronotc/monorepo-diff-buildkite-plugin/blob/602e650f10d54026fab466521c3202a04ae88afe/pipeline.go#L102
 func matchPath(p string, f string) bool {
 	// If the path contains a glob, the `doublestar.Match`
 	// method is used to determine the match,
@@ -73,10 +73,9 @@ func matchPath(p string, f string) bool {
 			return true
 		}
 	}
-	if strings.HasPrefix(f, p) {
-		return true
-	}
-	return false
+	patternDirs := strings.Split(p, "/")
+	fileDirs := strings.Split(f, "/")
+	return reflect.DeepEqual(fileDirs[:Min(len(patternDirs), len(fileDirs))], patternDirs)
 }
 
 func (p *Project) checkAffected(changedFiles []string) bool {

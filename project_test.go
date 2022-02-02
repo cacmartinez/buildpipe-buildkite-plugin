@@ -19,6 +19,7 @@ func TestCheckAffected(t *testing.T) {
 		"project6/main.swift",
 		"project7/source/main.swift",
 		"project7/tests/test.swift",
+		"project8/project8Tests/main.swift",
 	}
 
 	p1 := Project{Label: "project1", Path: []string{"project1/"}, Skip: []string{}}
@@ -53,4 +54,10 @@ func TestCheckAffected(t *testing.T) {
 
 	p7 := Project{Label: "project7", Path: []string{"project7/"}, ExcludePath: []string{"project7/tests"}}
 	assert.Equal(true, p7.checkAffected(changedFiles))
+
+	p8 := Project{Label: "project8", Path: []string{"project8/project8"}}
+	assert.Equal(false, p8.checkAffected(changedFiles))
+
+	p8 = Project{Label: "project8", Path: []string{"project8/project8/"}}
+	assert.Equal(false, p8.checkAffected(changedFiles))
 }
