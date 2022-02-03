@@ -154,8 +154,8 @@ func generateNonProjectStep(steps []interface{}, step interface{}, projects []Pr
 		for _, dependency := range dependencyList {
 			depStr, ok := dependency.(string)
 
-			if !ok { 
-				// At the moment only string dependencies would be processed by this. 
+			if !ok {
+				// At the moment only string dependencies would be processed by this.
 				// So for example dependencies that add an `allow_failure` will not be changed for project scoped support.
 				resultingDependencyList = append(resultingDependencyList, dependency)
 				continue
@@ -191,8 +191,9 @@ func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projec
 
 		env, foundEnv := stepMap["env"].(map[interface{}]interface{})
 		_, foundBlockStep := stepMap["block"].(string)
+		_, foundWaitStep := stepMap["wait"]
 
-		if !foundBlockStep {
+		if !foundBlockStep && !foundWaitStep {
 			if !foundEnv {
 				env = make(map[interface{}]interface{})
 				stepMap["env"] = env
